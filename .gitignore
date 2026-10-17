@@ -1,0 +1,39 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+.venv/
+env/
+venv/
+ENV/
+
+# Data & Models (Exclude heavy weights and datasets from git)
+models/*.pt
+models/*.onnx
+!models/README.md
+data/images/
+data/labels/
+!data/README.md
+
+# Application outputs
+outputs/snapshots/*
+!outputs/snapshots/.gitkeep
+outputs/processed_videos/*
+!outputs/processed_videos/.gitkeep
+outputs/reports/*
+!outputs/reports/.gitkeep
+
+# Databases & logs
+database/*.db
+database/*.sqlite3
+*.log
+
+# Environment variables
+.env
+
+# Streamlit config & cache
+.streamlit/
+.pytest_cache/
+.coverage
