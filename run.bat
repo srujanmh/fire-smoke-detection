@@ -25,25 +25,27 @@ echo ======================================================================
 echo    AegisVision AI - Real-Time Fire & Smoke Detection System
 echo ======================================================================
 echo.
-echo   Select an application interface to launch:
+echo   Select an action to launch:
 echo.
 echo     [1] Modern Web Dashboard  (FastAPI - http://localhost:8000)
 echo     [2] Native Desktop GUI    (CustomTkinter standalone window)
 echo     [3] Direct OpenCV Window  (High-speed camera HUD)
-echo     [4] Run Test Suite        (Pytest verification)
-echo     [5] Exit
+echo     [4] Train Custom Model    (Run YOLO training on dataset)
+echo     [5] Run Test Suite        (Pytest verification)
+echo     [6] Exit
 echo.
 echo ======================================================================
-set /p "CHOICE=Enter choice [1-5]: "
+set /p "CHOICE=Enter choice [1-6]: "
 
 if "%CHOICE%"=="1" goto LAUNCH_WEB
 if "%CHOICE%"=="2" goto LAUNCH_GUI
 if "%CHOICE%"=="3" goto LAUNCH_OPENCV
-if "%CHOICE%"=="4" goto LAUNCH_TESTS
-if "%CHOICE%"=="5" goto EXIT_SCRIPT
+if "%CHOICE%"=="4" goto LAUNCH_TRAIN
+if "%CHOICE%"=="5" goto LAUNCH_TESTS
+if "%CHOICE%"=="6" goto EXIT_SCRIPT
 
 echo.
-echo [!] Invalid selection. Please choose 1, 2, 3, 4, or 5.
+echo [!] Invalid selection. Please choose 1, 2, 3, 4, 5, or 6.
 timeout /t 2 >nul
 goto MENU
 
@@ -76,6 +78,16 @@ echo   Press [m] to toggle simulation mode
 echo   Press [r] to reset the alert buffer
 echo ======================================================================
 %PY_CMD% main.py
+goto MENU
+
+:LAUNCH_TRAIN
+cls
+echo ======================================================================
+echo Starting YOLO Training Pipeline...
+echo ======================================================================
+%PY_CMD% train.py --epochs 10 --imgsz 416 --batch 8
+echo.
+pause
 goto MENU
 
 :LAUNCH_TESTS
