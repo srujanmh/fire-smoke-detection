@@ -34,7 +34,7 @@ class FireSmokeDetector:
     def __init__(
         self,
         model_path: str = "models/fire_smoke.pt",
-        confidence_threshold: float = 0.35,
+        confidence_threshold: float = 0.25,
         fire_threshold: Optional[float] = None,
         smoke_threshold: Optional[float] = None,
         iou_threshold: float = 0.45,
@@ -43,8 +43,8 @@ class FireSmokeDetector:
     ):
         self.model_path = model_path
         self.confidence_threshold = confidence_threshold
-        self.fire_threshold = fire_threshold if fire_threshold is not None else 0.35
-        self.smoke_threshold = smoke_threshold if smoke_threshold is not None else 0.45
+        self.fire_threshold = fire_threshold if fire_threshold is not None else 0.25
+        self.smoke_threshold = smoke_threshold if smoke_threshold is not None else 0.35
         self.iou_threshold = iou_threshold
         self.imgsz = imgsz
 
@@ -173,8 +173,8 @@ class FireSmokeDetector:
         start_time = time.time()
         conf_thresh = confidence_threshold if confidence_threshold is not None else self.confidence_threshold
 
-        # Handle simulation mode
-        if self.is_simulation_mode or not self.is_loaded:
+        # Guarantee real AI inference whenever weights are loaded
+        if not self.is_loaded:
             if not self.is_simulation_mode:
                 return {
                     "status": "MODEL ERROR" if self.load_error else "MODEL MISSING",
@@ -188,7 +188,7 @@ class FireSmokeDetector:
                     "is_simulated": False
                 }
             else:
-                # Controlled simulation mode for UI testing
+                # Controlled simulation mode only if weights are missing
                 return self._simulate_detection(image, start_time)
 
         try:

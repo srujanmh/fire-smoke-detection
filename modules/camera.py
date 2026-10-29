@@ -48,6 +48,12 @@ class CameraManager:
                 logger.error(error_msg)
                 return False, error_msg
 
+            # Prevent frame queuing lag on live streaming
+            try:
+                self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            except Exception:
+                pass
+
             self.is_active = True
             self.frame_count = 0
             self.last_frame_time = time.time()

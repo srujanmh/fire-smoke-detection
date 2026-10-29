@@ -47,9 +47,9 @@ event_manager = EventManager(
 )
 detector = FireSmokeDetector(
     model_path=config.model_path,
-    confidence_threshold=0.45,
-    fire_threshold=0.45,
-    smoke_threshold=0.45,
+    confidence_threshold=0.25,
+    fire_threshold=0.25,
+    smoke_threshold=0.35,
     iou_threshold=config.iou_threshold,
     imgsz=config.inference_img_size
 )
@@ -197,16 +197,13 @@ DASHBOARD_HTML = """
             <div style="background: var(--card-bg); padding: 24px; border-radius: 8px; border: 1px solid var(--border); max-width: 600px;">
                 <div style="margin-bottom: 20px;">
                     <label style="display: block; font-weight: 600; margin-bottom: 8px;">Confidence Threshold</label>
-                    <input type="range" id="conf-slider" min="0.1" max="0.95" step="0.05" value="0.35" oninput="updateConfidence(this.value)" style="width: 100%;">
+                    <input type="range" id="conf-slider" min="0.10" max="0.90" step="0.05" value="0.25" oninput="updateConfidence(this.value)" style="width: 100%;">
                     <div style="display: flex; justify-content: space-between; color: var(--text-secondary); font-size: 0.85rem;">
-                        <span>0.10 (High Sensitivity)</span><span id="conf-val" style="color: var(--text-primary); font-weight: 700;">0.35</span><span>0.95 (High Specificity)</span>
+                        <span>0.10 (High Sensitivity / Lighter Flames)</span><span id="conf-val" style="color: var(--text-primary); font-weight: 700;">0.25</span><span>0.90 (High Specificity)</span>
                     </div>
                 </div>
-                <div style="margin-bottom: 20px;">
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                        <input type="checkbox" id="sim-check" onchange="toggleSimMode(this.checked)" style="width: 18px; height: 18px;">
-                        <span>Enable Simulated Mode (Test UI/Audio without AI weights)</span>
-                    </label>
+                <div style="padding: 12px; background: #1E293B; border-radius: 6px; font-size: 0.85rem; color: #94A3B8;">
+                    ℹ️ <strong>Real-Time AI Active:</strong> Running YOLOv8 with chromatic flame verification and temporal anti-flicker filtering.
                 </div>
             </div>
         </div>
@@ -335,7 +332,7 @@ def generate_camera_mjpeg():
                 b"--frame\r\n"
                 b"Content-Type: image/jpeg\r\n\r\n" + jpeg_bytes.tobytes() + b"\r\n"
             )
-            time.sleep(0.03)  # ~30 FPS
+            time.sleep(0.005)
     finally:
         camera.stop()
 
@@ -388,13 +385,12 @@ def export_csv_api():
 @app.post("/api/settings")
 def update_settings(simulated: Optional[bool] = None, conf: Optional[float] = None):
     """Update runtime settings."""
-    if simulated is not None:
-        detector.is_simulation_mode = simulated
+    detector.is_simulation_mode = False  # Always enforce real AI model
     if conf is not None:
         detector.confidence_threshold = conf
         detector.fire_threshold = conf
-        detector.smoke_threshold = max(conf, 0.40)
-    return {"success": True, "simulated": detector.is_simulation_mode, "confidence": detector.confidence_threshold}
+        detector.smoke_threshold = max(conf, 0.30)
+    return {"success": True, "simulated": False, "confidence": detector.confidence_threshold}
 
 
 if __name__ == "__main__":
