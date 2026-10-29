@@ -126,7 +126,8 @@ class VideoProcessor:
                     # Run inference
                     det_result = self.detector.detect(
                         rgb_frame,
-                        confidence_threshold=confidence_threshold
+                        confidence_threshold=confidence_threshold,
+                        is_rgb=True
                     )
 
                     detections = det_result.get("detections", [])

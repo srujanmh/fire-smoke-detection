@@ -59,7 +59,7 @@ class ImageProcessor:
         original_rgb = bgr_to_rgb(cv2_bgr)
 
         # 3. Inference
-        det_result = self.detector.detect(original_rgb, confidence_threshold=confidence_threshold)
+        det_result = self.detector.detect(original_rgb, confidence_threshold=confidence_threshold, is_rgb=True)
 
         # 4. Render Annotations
         annotated_rgb = draw_detections(original_rgb, det_result.get("detections", []), is_rgb=True)
