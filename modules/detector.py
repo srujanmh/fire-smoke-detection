@@ -44,7 +44,7 @@ class FireSmokeDetector:
         self.model_path = model_path
         self.confidence_threshold = confidence_threshold
         self.fire_threshold = fire_threshold if fire_threshold is not None else 0.25
-        self.smoke_threshold = smoke_threshold if smoke_threshold is not None else 0.35
+        self.smoke_threshold = smoke_threshold if smoke_threshold is not None else 0.45
         self.iou_threshold = iou_threshold
         self.imgsz = imgsz
 
@@ -198,9 +198,11 @@ class FireSmokeDetector:
             else:
                 image_bgr = image
 
+            # Run YOLO inference with sensitive base cutoff, then apply calibrated adaptive gates
+            yolo_conf = min(conf_thresh, 0.12)
             results = self.model.predict(
                 source=image_bgr,
-                conf=conf_thresh,
+                conf=yolo_conf,
                 iou=self.iou_threshold,
                 imgsz=self.imgsz,
                 device=self.device,
@@ -225,38 +227,45 @@ class FireSmokeDetector:
 
                     for box, conf, cls_id in zip(xyxy, confs, classes):
                         canonical_cls = self.class_mapping.get(cls_id, "unknown")
-                        raw_name = self.model_raw_names.get(cls_id, str(cls_id))
+                        raw_name = str(self.model_raw_names.get(cls_id, str(cls_id))).strip().lower()
 
-                        # Only process genuine fire or smoke detections; ignore generic/dummy classes
-                        if canonical_cls not in ["fire", "smoke"]:
-                            continue
-
-                        # Apply calibrated class-specific threshold
-                        if canonical_cls == "fire" and conf < self.fire_threshold:
-                            continue
-                        if canonical_cls == "smoke" and conf < self.smoke_threshold:
-                            continue
-
-                        # Spatial sanity: ignore spurious smoke boxes that occupy > 85% of the frame (ambient wall glare)
-                        box_w = max(0.0, float(box[2] - box[0]))
-                        box_h = max(0.0, float(box[3] - box[1]))
-                        if canonical_cls == "smoke" and (box_w * box_h) > (0.85 * img_w * img_h):
-                            continue
-
-                        # Chromatic verification for Fire:
-                        # Ensure the box region actually contains warm / combustion colored pixels in BGR
-                        if canonical_cls == "fire":
+                        # Process Fire candidates (including dataset class 1 'default' when confirmed as flame)
+                        if canonical_cls == "fire" or raw_name in ["fire", "flame", "blaze", "default"]:
                             x1, y1 = max(0, int(box[0])), max(0, int(box[1]))
                             x2, y2 = min(img_w, int(box[2])), min(img_h, int(box[3]))
                             box_crop = image_bgr[y1:y2, x1:x2]
-                            if box_crop.size > 0:
-                                hsv_crop = cv2.cvtColor(box_crop, cv2.COLOR_BGR2HSV)
-                                # Warm flame hues in OpenCV HSV (H: 0-180): 0-35 (red/orange/yellow) or 160-180 (deep red)
-                                m1 = (hsv_crop[:, :, 0] <= 35) & (hsv_crop[:, :, 1] >= 35) & (hsv_crop[:, :, 2] >= 60)
-                                m2 = (hsv_crop[:, :, 0] >= 160) & (hsv_crop[:, :, 1] >= 35) & (hsv_crop[:, :, 2] >= 60)
-                                warm_ratio = (m1 | m2).sum() / (box_crop.shape[0] * box_crop.shape[1])
-                                if warm_ratio < 0.02:  # Must contain at least 2% flame-spectrum pixels
-                                    continue
+                            if box_crop.size == 0:
+                                continue
+
+                            hsv_crop = cv2.cvtColor(box_crop, cv2.COLOR_BGR2HSV)
+                            # Pure flame hues in OpenCV HSV (H: 0-180): 0-25 (red/orange) or 165-180 (crimson)
+                            m1 = (hsv_crop[:, :, 0] <= 25) & (hsv_crop[:, :, 1] >= 40) & (hsv_crop[:, :, 2] >= 70)
+                            m2 = (hsv_crop[:, :, 0] >= 165) & (hsv_crop[:, :, 1] >= 40) & (hsv_crop[:, :, 2] >= 70)
+                            warm_ratio = (m1 | m2).sum() / (box_crop.shape[0] * box_crop.shape[1])
+
+                            # If candidate is from generic 'default' dataset label, require high flame density
+                            if raw_name == "default" and warm_ratio < 0.25:
+                                continue
+
+                            # Adaptive threshold: high combustion density relaxes threshold to 0.14 for macro blazes
+                            req_thresh = 0.14 if warm_ratio >= 0.20 else self.fire_threshold
+                            if conf < req_thresh or warm_ratio < 0.02:
+                                continue
+
+                            canonical_cls = "fire"
+
+                        elif canonical_cls == "smoke" or raw_name in ["smoke", "smoke_cloud", "fume"]:
+                            box_w = max(0.0, float(box[2] - box[0]))
+                            box_h = max(0.0, float(box[3] - box[1]))
+                            # Spatial sanity: ignore ambient wall glare covering >85% of frame
+                            if (box_w * box_h) > (0.85 * img_w * img_h):
+                                continue
+                            if conf < self.smoke_threshold:
+                                continue
+
+                            canonical_cls = "smoke"
+                        else:
+                            continue
 
                         if conf > highest_conf:
                             highest_conf = float(conf)
