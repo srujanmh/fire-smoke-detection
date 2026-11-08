@@ -50,6 +50,22 @@ class AlertSystem:
         self.current_alert_state = "NORMAL"
         logger.info("Alert state and temporal buffers reset.")
 
+    def update_temporal_window(self, new_size: int, new_min_detections: int) -> None:
+        """
+        Resize the sliding window buffers at runtime.
+        Python deques have an immutable maxlen, so we rebuild them while
+        preserving recent history up to the new size.
+        """
+        new_size = max(1, int(new_size))
+        new_min_detections = max(1, min(int(new_min_detections), new_size))
+        self.fire_window = deque(list(self.fire_window)[-new_size:], maxlen=new_size)
+        self.smoke_window = deque(list(self.smoke_window)[-new_size:], maxlen=new_size)
+        self.temporal_window_size = new_size
+        self.temporal_min_detections = new_min_detections
+        logger.info(
+            f"Temporal window updated: size={new_size}, min_detections={new_min_detections}"
+        )
+
     def set_silenced(self, silenced: bool) -> None:
         """Mute or unmute audio notifications."""
         self.silenced = silenced

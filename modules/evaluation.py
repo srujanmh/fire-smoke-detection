@@ -242,7 +242,10 @@ class ModelEvaluator:
             "overall_precision": round(overall_prec, 4),
             "overall_recall": round(overall_rec, 4),
             "overall_f1": round(overall_f1, 4),
-            "map_50": round((per_class_metrics["fire"]["precision"] + per_class_metrics["smoke"]["precision"]) / 2.0, 4),
+            # NOTE: This is mean per-class precision, not true mAP@0.5.
+            # True mAP requires sweeping confidence thresholds and computing
+            # area under the precision-recall curve (11-point interpolation).
+            "mean_precision": round((per_class_metrics["fire"]["precision"] + per_class_metrics["smoke"]["precision"]) / 2.0, 4),
             "per_class_metrics": per_class_metrics,
             "avg_latency_ms": round(avg_latency_ms, 2),
             "throughput_fps": round(fps, 1)

@@ -385,12 +385,13 @@ def export_csv_api():
 @app.post("/api/settings")
 def update_settings(simulated: Optional[bool] = None, conf: Optional[float] = None):
     """Update runtime settings."""
-    detector.is_simulation_mode = False  # Always enforce real AI model
+    if simulated is not None:
+        detector.is_simulation_mode = simulated
     if conf is not None:
         detector.confidence_threshold = conf
         detector.fire_threshold = conf
         detector.smoke_threshold = max(conf, 0.30)
-    return {"success": True, "simulated": False, "confidence": detector.confidence_threshold}
+    return {"success": True, "simulated": detector.is_simulation_mode, "confidence": detector.confidence_threshold}
 
 
 if __name__ == "__main__":

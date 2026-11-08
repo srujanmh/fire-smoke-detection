@@ -79,7 +79,7 @@ def render_model_evaluation(core: Dict[str, Any]):
         m1.metric("Overall Precision", f"{res['overall_precision']:.1%}")
         m2.metric("Overall Recall", f"{res['overall_recall']:.1%}")
         m3.metric("F1-Score", f"{res['overall_f1']:.1%}")
-        m4.metric("Mean AP@0.5", f"{res['map_50']:.1%}")
+        m4.metric("Mean Precision", f"{res['mean_precision']:.1%}", help="Mean of fire + smoke precision. See evaluation.py for true mAP details.")
 
         # Per-class table
         st.subheader("Class-Level Detection Performance")

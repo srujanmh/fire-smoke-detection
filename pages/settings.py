@@ -64,7 +64,7 @@ def render_settings(core: Dict[str, Any]):
     )
     if sim_mode != detector.is_simulation_mode:
         detector.is_simulation_mode = sim_mode
-        st.experimental_rerun() if hasattr(st, "experimental_rerun") else st.rerun()
+        st.rerun()
 
     if detector.is_simulation_mode:
         st.warning("⚠️ SIMULATED MODE IS ACTIVE. Detections are mock overlays for UI verification, NOT real AI inference.")
@@ -89,10 +89,11 @@ def render_settings(core: Dict[str, Any]):
     a_col1, a_col2, a_col3 = st.columns(3)
     with a_col1:
         window_size = st.number_input("Sliding Window Frames", min_value=1, max_value=20, value=alerts.temporal_window_size, step=1)
-        alerts.temporal_window_size = int(window_size)
     with a_col2:
         min_detections = st.number_input("Min Confirmed Detections", min_value=1, max_value=int(window_size), value=min(alerts.temporal_min_detections, int(window_size)), step=1)
-        alerts.temporal_min_detections = int(min_detections)
+    # update_temporal_window() rebuilds the deques with the correct maxlen —
+    # direct attribute assignment leaves the deque's immutable maxlen unchanged.
+    alerts.update_temporal_window(int(window_size), int(min_detections))
     with a_col3:
         cooldown_sec = st.number_input("Audio Alarm Cooldown (s)", min_value=1.0, max_value=60.0, value=float(alerts.cooldown_seconds), step=1.0)
         alerts.cooldown_seconds = float(cooldown_sec)
