@@ -29,8 +29,8 @@ class AppConfig:
     force_cpu: bool = False
 
     # Detection & Temporal Confirmation Settings
-    fire_confidence_threshold: float = 0.35
-    smoke_confidence_threshold: float = 0.30
+    fire_confidence_threshold: float = 0.45
+    smoke_confidence_threshold: float = 0.80
     temporal_window_frames: int = 5
     temporal_min_detections: int = 3
     alert_cooldown_seconds: float = 5.0

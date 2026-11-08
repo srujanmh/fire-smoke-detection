@@ -1,11 +1,9 @@
-# YOLO Dataset Configuration for Fire & Smoke Detection
-path: ../data  # dataset root
+path: C:/Users/sruja/.gemini/antigravity/scratch/fire-smoke-detection/data
 train: images/train
 val: images/val
 test: images/test
-
-# Number of classes
-nc: 2
-
-# Class names
-names: ['fire', 'smoke']
+nc: 3
+names:
+- Fire
+- default
+- smoke
