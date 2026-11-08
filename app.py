@@ -9,6 +9,13 @@ import sys
 import streamlit as st
 from pathlib import Path
 
+# Auto-download model on Streamlit Cloud if MODEL_URL env var is set
+try:
+    from download_model import ensure_model
+    ensure_model()
+except Exception:
+    pass
+
 # Ensure project root is in python path
 PROJECT_ROOT = Path(__file__).resolve().parent
 if str(PROJECT_ROOT) not in sys.path:

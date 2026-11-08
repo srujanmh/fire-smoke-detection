@@ -34,6 +34,7 @@ database/*.sqlite3
 .env
 
 # Streamlit config & cache
-.streamlit/
+.streamlit/secrets.toml
+.streamlit/*.log
 .pytest_cache/
 .coverage
